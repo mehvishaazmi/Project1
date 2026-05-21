@@ -6,9 +6,11 @@ import { LogIn, UserPlus } from "lucide-react";
 
 import {
   adminEmail,
+  adminPassword,
   demoAdminUser,
   demoUser,
 } from "@/lib/demo-mode";
+import { setStoredDemoUser } from "@/lib/app-auth";
 
 type DemoAuthCardProps = {
   mode: "sign-in" | "sign-up";
@@ -23,13 +25,27 @@ export default function DemoAuthCard({
 
   const [email, setEmail] =
     useState(demoUser.email);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const continueWithEmail = () => {
     const normalizedEmail =
       email.trim().toLowerCase();
+    const isAdminEmail =
+      normalizedEmail === adminEmail;
+
+    if (
+      isAdminEmail &&
+      password !== adminPassword
+    ) {
+      setError("Enter the correct admin password.");
+      return;
+    }
+
+    setError("");
 
     const user =
-      normalizedEmail === adminEmail
+      isAdminEmail
         ? demoAdminUser
         : {
             ...demoUser,
@@ -45,10 +61,8 @@ export default function DemoAuthCard({
                 ) || demoUser.name,
           };
 
-    window.localStorage.setItem(
-      "travelbuddy-demo-user",
-      JSON.stringify(user),
-    );
+    setStoredDemoUser(user);
+
     router.push(
       user.email === demoAdminUser.email
         ? "/admin"
@@ -63,11 +77,10 @@ export default function DemoAuthCard({
           T
         </div>
         <h1 className="text-2xl font-bold text-slate-950">
-          {isSignUp ? "Create demo account" : "Sign in to demo"}
+          {isSignUp ? "Create your account" : "Sign in to your account"}
         </h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Offline demo mode uses a local sample profile, so no internet auth is
-          required.
+          Use your email to continue. Admin access requires the admin password.
         </p>
       </div>
 
@@ -82,9 +95,10 @@ export default function DemoAuthCard({
         id="demo-email"
         type="email"
         value={email}
-        onChange={(event) =>
-          setEmail(event.target.value)
-        }
+        onChange={(event) => {
+          setEmail(event.target.value);
+          setError("");
+        }}
         onKeyDown={(event) => {
           if (event.key === "Enter") {
             continueWithEmail();
@@ -93,6 +107,40 @@ export default function DemoAuthCard({
         className="mb-4 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
         placeholder="you@example.com"
       />
+
+      <label
+        htmlFor="demo-password"
+        className="mb-2 block text-sm font-semibold text-slate-700"
+      >
+        Password
+      </label>
+
+      <input
+        id="demo-password"
+        type="password"
+        value={password}
+        onChange={(event) => {
+          setPassword(event.target.value);
+          setError("");
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            continueWithEmail();
+          }
+        }}
+        className="mb-4 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+        placeholder={
+          email.trim().toLowerCase() === adminEmail
+            ? "Admin password"
+            : "Optional for travelers"
+        }
+      />
+
+      {error ? (
+        <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          {error}
+        </p>
+      ) : null}
 
       <button
         type="button"

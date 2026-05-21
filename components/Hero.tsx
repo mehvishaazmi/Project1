@@ -3,8 +3,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Users, Sparkles } from "lucide-react";
+import { useAppAuth } from "@/lib/app-auth";
 
 export const Hero = () => {
+const { isLoaded, isSignedIn } = useAppAuth();
+const startHref = isLoaded && isSignedIn ? "/plan-trip" : "/sign-up";
+
 return ( <section className="relative pt-32 pb-20 overflow-hidden">
 
   {/* 🔥 BACKGROUND */}
@@ -34,9 +38,9 @@ return ( <section className="relative pt-32 pb-20 overflow-hidden">
 
       {/* CTA */}
       <div className="mt-8 flex gap-4">
-        <Link href="/plan-trip">
+        <Link href={startHref}>
           <Button className="gradient-hero text-white px-6 py-5 rounded-full shadow-glow hover:scale-105 transition">
-            Start Planning →
+            {isLoaded && isSignedIn ? "Start Planning ->" : "Sign Up & Start ->"}
           </Button>
         </Link>
 

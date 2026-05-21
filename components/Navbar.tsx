@@ -12,6 +12,7 @@ import { adminEmail, demoUser, isDemoMode } from "@/lib/demo-mode";
 import {
   getUserEmail,
   useAppAuth,
+  useAppSignOut,
   useAppUser,
 } from "@/lib/app-auth";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 
 import {
+  LogOut,
   Menu,
   X,
 } from "lucide-react";
@@ -79,6 +81,9 @@ export default function Navbar() {
     user,
   } = useAppUser();
 
+  const signOut =
+    useAppSignOut();
+
   const currentEmail =
     getUserEmail(user).toLowerCase();
 
@@ -95,7 +100,6 @@ export default function Navbar() {
     currentEmail === adminEmail;
 
   const signedIn =
-    isDemoMode ||
     isSignedIn;
 
   const authLoaded =
@@ -246,7 +250,7 @@ export default function Navbar() {
               {authLoaded &&
                 (signedIn ? (
 
-                  <div className="scale-110">
+                  <div className="hidden items-center gap-3 md:flex">
 
                     {isDemoMode ? (
                       <div
@@ -268,6 +272,31 @@ export default function Navbar() {
                     ) : (
                       <UserButton />
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() => signOut()}
+                      className="
+                        inline-flex
+                        items-center
+                        gap-2
+                        rounded-2xl
+                        border
+                        border-slate-200
+                        bg-white/70
+                        px-4
+                        py-2.5
+                        text-sm
+                        font-semibold
+                        text-slate-700
+                        transition-all
+                        hover:bg-slate-100
+                        hover:text-slate-950
+                      "
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </button>
                   </div>
 
                 ) : (
@@ -400,8 +429,7 @@ export default function Navbar() {
                 )}
 
                 {/* MOBILE AUTH */}
-                {authLoaded &&
-                  !signedIn && (
+                {authLoaded && (
 
                     <div
                       className="
@@ -415,46 +443,76 @@ export default function Navbar() {
                       "
                     >
 
-                      {/* SIGN IN */}
-                      <Link
-                        href="/sign-in"
-                        onClick={() =>
-                          setMobileOpen(false)
-                        }
-                        className="
-                          rounded-2xl
-                          px-4
-                          py-3
-                          text-sm
-                          font-semibold
-                          text-slate-700
-                          hover:bg-slate-100
-                        "
-                      >
-                        Sign In
-                      </Link>
+                      {signedIn ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMobileOpen(false);
+                            signOut();
+                          }}
+                          className="
+                            flex
+                            items-center
+                            justify-center
+                            gap-2
+                            rounded-2xl
+                            border
+                            border-slate-200
+                            px-4
+                            py-3
+                            text-sm
+                            font-semibold
+                            text-slate-700
+                            hover:bg-slate-100
+                          "
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Sign Out
+                        </button>
+                      ) : (
+                        <>
+                          {/* SIGN IN */}
+                          <Link
+                            href="/sign-in"
+                            onClick={() =>
+                              setMobileOpen(false)
+                            }
+                            className="
+                              rounded-2xl
+                              px-4
+                              py-3
+                              text-sm
+                              font-semibold
+                              text-slate-700
+                              hover:bg-slate-100
+                            "
+                          >
+                            Sign In
+                          </Link>
 
-                      {/* SIGN UP */}
-                      <Link
-                        href="/sign-up"
-                        onClick={() =>
-                          setMobileOpen(false)
-                        }
-                        className="
-                          rounded-2xl
-                          bg-cyan-500
-                          px-4
-                          py-3
-                          text-center
-                          text-sm
-                          font-semibold
-                          text-white
-                          shadow-lg
-                          hover:bg-cyan-600
-                        "
-                      >
-                        Sign Up
-                      </Link>
+                          {/* SIGN UP */}
+                          <Link
+                            href="/sign-up"
+                            onClick={() =>
+                              setMobileOpen(false)
+                            }
+                            className="
+                              rounded-2xl
+                              bg-cyan-500
+                              px-4
+                              py-3
+                              text-center
+                              text-sm
+                              font-semibold
+                              text-white
+                              shadow-lg
+                              hover:bg-cyan-600
+                            "
+                          >
+                            Sign Up
+                          </Link>
+                        </>
+                      )}
                     </div>
                   )}
               </div>

@@ -3,9 +3,12 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Apple, Smartphone } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAppAuth } from "@/lib/app-auth";
 
 export const CTA = () => {
   const router = useRouter();
+  const { isLoaded, isSignedIn } = useAppAuth();
+  const startPath = isLoaded && isSignedIn ? "/plan-trip" : "/sign-up";
 
   return (
     <section id="cta" className="py-24 sm:py-32">
@@ -29,10 +32,10 @@ export const CTA = () => {
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               {/* 🔥 PRIMARY ACTION */}
               <Button
-                onClick={() => router.push("/plan-trip")}
+                onClick={() => router.push(startPath)}
                 className="group px-6 py-5 rounded-full text-lg font-semibold bg-white text-black hover:scale-105 transition"
               >
-                Get started free
+                {isLoaded && isSignedIn ? "Start planning" : "Get started free"}
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition" />
               </Button>
 

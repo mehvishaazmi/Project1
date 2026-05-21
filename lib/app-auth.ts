@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/rules-of-hooks */
+
 import {
   useEffect,
   useMemo,
@@ -7,6 +9,7 @@ import {
 } from "react";
 
 import {
+  useClerk,
   useAuth,
   useUser,
 } from "@clerk/nextjs";
@@ -18,6 +21,19 @@ import {
 } from "@/lib/demo-mode";
 
 type DemoLocalUser = typeof demoUser;
+
+type AppUserLike = {
+  primaryEmailAddress?: {
+    emailAddress?: string | null;
+  } | null;
+  emailAddresses?: Array<{
+    emailAddress?: string | null;
+  }>;
+} | null | undefined;
+
+const demoSessionKey = "travelbuddy-demo-session";
+const demoUserKey = "travelbuddy-demo-user";
+const demoAuthChangedEvent = "travelbuddy-demo-auth-changed";
 
 function toAppUser(user: DemoLocalUser) {
   return {
@@ -38,11 +54,19 @@ function toAppUser(user: DemoLocalUser) {
 
 export function getStoredDemoUser() {
   if (typeof window === "undefined") {
-    return demoUser;
+    return null;
+  }
+
+  const hasSession = window.localStorage.getItem(
+    demoSessionKey,
+  );
+
+  if (!hasSession) {
+    return null;
   }
 
   const stored = window.localStorage.getItem(
-    "travelbuddy-demo-user",
+    demoUserKey,
   );
 
   if (!stored) {
@@ -56,7 +80,27 @@ export function getStoredDemoUser() {
   }
 }
 
-export function getUserEmail(user: any) {
+export function setStoredDemoUser(user: DemoLocalUser) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(demoSessionKey, "true");
+  window.localStorage.setItem(demoUserKey, JSON.stringify(user));
+  window.dispatchEvent(new Event(demoAuthChangedEvent));
+}
+
+export function clearStoredDemoUser() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(demoSessionKey);
+  window.localStorage.removeItem(demoUserKey);
+  window.dispatchEvent(new Event(demoAuthChangedEvent));
+}
+
+export function getUserEmail(user: AppUserLike) {
   return (
     user?.primaryEmailAddress?.emailAddress ||
     user?.emailAddresses?.[0]?.emailAddress ||
@@ -68,35 +112,81 @@ const fallbackAdminUser = toAppUser(demoAdminUser);
 
 export function useAppAuth() {
   if (isDemoMode) {
+    const [currentUser, setCurrentUser] =
+      useState<DemoLocalUser | null>(() => getStoredDemoUser());
+
+    useEffect(() => {
+      const refreshUser = () => {
+        setCurrentUser(getStoredDemoUser());
+      };
+
+      refreshUser();
+
+      window.addEventListener("storage", refreshUser);
+      window.addEventListener(demoAuthChangedEvent, refreshUser);
+
+      return () => {
+        window.removeEventListener("storage", refreshUser);
+        window.removeEventListener(demoAuthChangedEvent, refreshUser);
+      };
+    }, []);
+
     return {
       isLoaded: true,
-      isSignedIn: true,
-      userId: demoUser.id,
+      isSignedIn: Boolean(currentUser),
+      userId: currentUser?.id || null,
     };
   }
 
   return useAuth();
 }
 
+export function useAppSignOut() {
+  if (isDemoMode) {
+    return () => {
+      clearStoredDemoUser();
+      window.location.assign("/");
+    };
+  }
+
+  const { signOut } = useClerk();
+
+  return () => signOut({ redirectUrl: "/" });
+}
+
 export function useAppUser() {
   if (isDemoMode) {
     const [currentUser, setCurrentUser] =
-      useState(() => getStoredDemoUser());
+      useState<DemoLocalUser | null>(() => getStoredDemoUser());
 
     useEffect(() => {
-      const storedUser = getStoredDemoUser();
+      const refreshUser = () => {
+        const storedUser = getStoredDemoUser();
 
-      setCurrentUser((previousUser) =>
-        previousUser.id === storedUser.id &&
-        previousUser.email === storedUser.email
-          ? previousUser
-          : storedUser,
-      );
+        setCurrentUser((previousUser) =>
+          previousUser?.id === storedUser?.id &&
+          previousUser?.email === storedUser?.email
+            ? previousUser
+            : storedUser,
+        );
+      };
+
+      refreshUser();
+
+      window.addEventListener("storage", refreshUser);
+      window.addEventListener(demoAuthChangedEvent, refreshUser);
+
+      return () => {
+        window.removeEventListener("storage", refreshUser);
+        window.removeEventListener(demoAuthChangedEvent, refreshUser);
+      };
     }, []);
 
     const user = useMemo(
       () =>
-        currentUser.email === demoAdminUser.email
+        !currentUser
+          ? null
+          : currentUser.email === demoAdminUser.email
           ? fallbackAdminUser
           : toAppUser(currentUser),
       [currentUser],
@@ -104,7 +194,7 @@ export function useAppUser() {
 
     return {
       isLoaded: true,
-      isSignedIn: true,
+      isSignedIn: Boolean(user),
       user,
     };
   }

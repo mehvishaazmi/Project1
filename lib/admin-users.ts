@@ -43,7 +43,7 @@ const defaultUsers: AdminTrackedUser[] = [
     page: "/dashboard",
   },
   {
-    id: "demo-user-2",
+    id: "traveler-user-2",
     name: "Maya Rao",
     email: "maya@example.com",
     status: "idle",

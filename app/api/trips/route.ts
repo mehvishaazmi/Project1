@@ -15,7 +15,7 @@ const demoTrips = [
     days: 5,
     budget: 45000,
     created_at: new Date().toISOString(),
-    invite_code: "DEMO123",
+    invite_code: "BALI123",
     plan: null,
   },
   {
@@ -25,7 +25,7 @@ const demoTrips = [
     days: 7,
     budget: 120000,
     created_at: new Date().toISOString(),
-    invite_code: "DEMO456",
+    invite_code: "TOKYO456",
     plan: null,
   },
 ];
@@ -185,7 +185,7 @@ export async function POST(
       return NextResponse.json({
         success: true,
         message:
-          "Demo trip created successfully",
+          "Trip created successfully",
         trip: {
           id: `demo-trip-${crypto.randomUUID()}`,
           user_id: demoUser.id,
@@ -193,7 +193,7 @@ export async function POST(
           days,
           budget,
           plan,
-          invite_code: "DEMO",
+          invite_code: "TRIP",
           created_at: new Date().toISOString(),
         },
       });

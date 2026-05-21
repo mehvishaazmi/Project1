@@ -24,7 +24,7 @@ export async function POST(
           id: `demo-member-${Date.now()}`,
           trip_id: body.trip_id,
           user_id: body.member_user_id,
-          user_name: body.member_name || "Demo Traveler",
+          user_name: body.member_name || "Traveler",
         },
       });
     }

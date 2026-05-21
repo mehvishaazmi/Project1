@@ -3,9 +3,9 @@ export const isDemoMode =
 
 export const demoUser = {
   id: "demo-user",
-  name: "Demo User",
-  email: "demo@travelbuddy.local",
-  initials: "DU",
+  name: "Travel User",
+  email: "user@travelbuddy.local",
+  initials: "TU",
 };
 
 export const demoAdminUser = {
@@ -16,3 +16,5 @@ export const demoAdminUser = {
 };
 
 export const adminEmail = "admin@gmail.com";
+
+export const adminPassword = "admin123";

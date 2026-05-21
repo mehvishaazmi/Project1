@@ -19,7 +19,11 @@ export default function Page() {
         {isDemoMode ? (
           <DemoAuthCard mode="sign-up" />
         ) : (
-          <SignUp />
+          <SignUp
+            signInUrl="/sign-in"
+            forceRedirectUrl="/dashboard"
+            fallbackRedirectUrl="/dashboard"
+          />
         )}
       </div>
 
