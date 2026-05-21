@@ -1,9 +1,9 @@
 "use client";
 
 import {
-  useRouter,
   useSearchParams,
 } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import { LogIn, UserPlus } from "lucide-react";
 
@@ -26,7 +26,6 @@ type DemoAuthCardProps = {
 export default function DemoAuthCard({
   mode,
 }: DemoAuthCardProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const isSignUp = mode === "sign-up";
@@ -116,7 +115,7 @@ export default function DemoAuthCard({
         setStoredDemoUser(user);
       }
 
-      router.replace(
+      window.location.assign(
         getRedirectPath(user.email === demoAdminUser.email),
       );
     } catch (err) {
@@ -219,9 +218,29 @@ export default function DemoAuthCard({
       </button>
 
       <p className="mt-5 text-center text-xs leading-5 text-slate-500">
-        {isSignUp
-          ? "Already have an account? Use Sign In."
-          : "New here? Use Sign Up first."}
+        {isSignUp ? (
+          <>
+            Already have an account?{" "}
+            <Link
+              href="/sign-in"
+              className="font-semibold text-cyan-600 hover:text-cyan-700"
+            >
+              Sign in
+            </Link>
+            .
+          </>
+        ) : (
+          <>
+            New here?{" "}
+            <Link
+              href="/sign-up"
+              className="font-semibold text-cyan-600 hover:text-cyan-700"
+            >
+              Create an account
+            </Link>
+            .
+          </>
+        )}
       </p>
     </form>
   );
