@@ -15,6 +15,11 @@ const VALID_CATEGORIES = [
   "Other",
 ];
 
+type TripMember = {
+  user_id: string;
+  user_name?: string;
+};
+
 // ====================================
 // CREATE EXPENSE
 // ====================================
@@ -165,7 +170,7 @@ export async function POST(
     // ====================================
 
     const currentMember =
-      members.find(
+      (members as TripMember[]).find(
         (
           member,
         ) =>
@@ -270,7 +275,7 @@ export async function POST(
       total;
 
     const splitRows =
-      members.map(
+      (members as TripMember[]).map(
         (
           member,
           index,

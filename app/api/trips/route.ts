@@ -30,6 +30,10 @@ const demoTrips = [
   },
 ];
 
+type TripMembership = {
+  trip_id: string;
+};
+
 // ====================================
 // GET USER TRIPS
 // ====================================
@@ -89,7 +93,7 @@ export async function GET() {
     }
 
     const tripIds =
-      memberships?.map(
+      (memberships as TripMembership[] | null)?.map(
         (
           m,
         ) => m.trip_id,

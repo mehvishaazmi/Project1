@@ -21,6 +21,10 @@ type Expense = {
   created_at: string;
 };
 
+type TripBuddy = {
+  name: string;
+};
+
 export default function MyTripPage() {
   const params = useParams();
   const { user } = useUser();
@@ -55,7 +59,13 @@ export default function MyTripPage() {
       .from("trip_buddies")
       .select("name")
       .eq("trip_id", id);
-    if (data) setBuddies(data.map((b) => b.name));
+    if (data) {
+      setBuddies(
+        (data as TripBuddy[]).map(
+          (b) => b.name,
+        ),
+      );
+    }
   }
 
   async function addBuddy() {

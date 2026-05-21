@@ -21,6 +21,7 @@ import {
   Wallet,
   ChevronRight,
   Sparkles,
+  CalendarDays,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -36,6 +37,33 @@ type TripPlan = {
   budget: Record<string, string>;
   tips?: string[];
   places?: string[];
+  trip_dates?: {
+    start_date: string;
+    end_date: string;
+  };
+};
+
+const getInclusiveDays = (
+  startDate: string,
+  endDate: string,
+) => {
+  if (!startDate || !endDate) {
+    return null;
+  }
+
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  const diff =
+    end.getTime() -
+    start.getTime();
+
+  if (Number.isNaN(diff) || diff < 0) {
+    return null;
+  }
+
+  return Math.ceil(
+    diff / (1000 * 60 * 60 * 24),
+  ) + 1;
 };
 
 export function PlanTripContent() {
@@ -44,13 +72,22 @@ export function PlanTripContent() {
 
   const searchParams = useSearchParams();
 
-  const { user } = useUser();
+  const {
+    user,
+    isLoaded,
+  } = useUser();
 
   const [destination, setDestination] =
     useState("");
 
   const [days, setDays] =
     useState(3);
+
+  const [startDate, setStartDate] =
+    useState("");
+
+  const [endDate, setEndDate] =
+    useState("");
 
   const [budget, setBudget] =
     useState(5000);
@@ -82,6 +119,29 @@ export function PlanTripContent() {
 
   }, [searchParams]);
 
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!user?.id) {
+      router.replace(
+        "/sign-up?redirect_url=/plan-trip",
+      );
+    }
+  }, [isLoaded, router, user?.id]);
+
+  useEffect(() => {
+    const tripDays = getInclusiveDays(
+      startDate,
+      endDate,
+    );
+
+    if (tripDays) {
+      setDays(tripDays);
+    }
+  }, [startDate, endDate]);
+
   // ====================================
   // GENERATE TRIP
   // ====================================
@@ -101,6 +161,29 @@ export function PlanTripContent() {
 
       toast.error(
         "Days must be between 1 and 30",
+      );
+
+      return;
+    }
+
+    if (!startDate || !endDate) {
+
+      toast.error(
+        "Please select trip dates",
+      );
+
+      return;
+    }
+
+    if (
+      !getInclusiveDays(
+        startDate,
+        endDate,
+      )
+    ) {
+
+      toast.error(
+        "End date must be after start date",
       );
 
       return;
@@ -158,7 +241,13 @@ export function PlanTripContent() {
         return;
       }
 
-      setPlan(data.plan);
+      setPlan({
+        ...data.plan,
+        trip_dates: {
+          start_date: startDate,
+          end_date: endDate,
+        },
+      });
 
       toast.success(
         "Trip generated successfully!",
@@ -238,7 +327,13 @@ export function PlanTripContent() {
 
               budget,
 
-              plan,
+              plan: {
+                ...plan,
+                trip_dates: {
+                  start_date: startDate,
+                  end_date: endDate,
+                },
+              },
 
               user_name: userName,
             }),
@@ -283,6 +378,13 @@ export function PlanTripContent() {
     <div className="min-h-screen bg-background">
 
       <Navbar />
+
+      {!isLoaded || !user?.id ? (
+        <div className="flex min-h-screen items-center justify-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+      ) : (
+        <>
 
       {/* HERO */}
       <section
@@ -418,6 +520,105 @@ export function PlanTripContent() {
                     pl-9
                   "
                 />
+              </div>
+            </div>
+
+            {/* DATES */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+              <div>
+
+                <Label
+                  className="
+                    mb-2
+                    block
+                    text-xs
+                    font-semibold
+                    uppercase
+                    tracking-wider
+                    text-muted-foreground
+                  "
+                >
+                  Date From
+                </Label>
+
+                <div className="relative">
+
+                  <CalendarDays
+                    className="
+                      absolute
+                      left-3
+                      top-1/2
+                      h-4
+                      w-4
+                      -translate-y-1/2
+                      text-muted-foreground
+                    "
+                  />
+
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) =>
+                      setStartDate(
+                        e.target.value,
+                      )
+                    }
+                    className="
+                      h-12
+                      rounded-xl
+                      pl-9
+                    "
+                  />
+                </div>
+              </div>
+
+              <div>
+
+                <Label
+                  className="
+                    mb-2
+                    block
+                    text-xs
+                    font-semibold
+                    uppercase
+                    tracking-wider
+                    text-muted-foreground
+                  "
+                >
+                  Date To
+                </Label>
+
+                <div className="relative">
+
+                  <CalendarDays
+                    className="
+                      absolute
+                      left-3
+                      top-1/2
+                      h-4
+                      w-4
+                      -translate-y-1/2
+                      text-muted-foreground
+                    "
+                  />
+
+                  <Input
+                    type="date"
+                    value={endDate}
+                    min={startDate || undefined}
+                    onChange={(e) =>
+                      setEndDate(
+                        e.target.value,
+                      )
+                    }
+                    className="
+                      h-12
+                      rounded-xl
+                      pl-9
+                    "
+                  />
+                </div>
               </div>
             </div>
 
@@ -741,6 +942,8 @@ export function PlanTripContent() {
       </section>
 
       <Footer />
+        </>
+      )}
     </div>
   );
 }

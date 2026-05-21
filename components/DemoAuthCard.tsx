@@ -1,6 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { useState } from "react";
 import { LogIn, UserPlus } from "lucide-react";
 
@@ -10,7 +13,11 @@ import {
   demoAdminUser,
   demoUser,
 } from "@/lib/demo-mode";
-import { setStoredDemoUser } from "@/lib/app-auth";
+import {
+  createLocalAccount,
+  setStoredDemoUser,
+  signInLocalAccount,
+} from "@/lib/app-auth";
 
 type DemoAuthCardProps = {
   mode: "sign-in" | "sign-up";
@@ -20,19 +27,56 @@ export default function DemoAuthCard({
   mode,
 }: DemoAuthCardProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const isSignUp = mode === "sign-up";
+  const redirectUrl =
+    searchParams.get("redirect_url");
 
   const [email, setEmail] =
-    useState(demoUser.email);
+    useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] =
+    useState(false);
+
+  const getRedirectPath = (isAdminUser: boolean) => {
+    if (isAdminUser) {
+      return "/admin";
+    }
+
+    if (
+      !redirectUrl ||
+      !redirectUrl.startsWith("/") ||
+      redirectUrl.startsWith("//") ||
+      redirectUrl.startsWith("/sign-in") ||
+      redirectUrl.startsWith("/sign-up")
+    ) {
+      return "/dashboard";
+    }
+
+    return redirectUrl;
+  };
 
   const continueWithEmail = () => {
+    if (isSubmitting) {
+      return;
+    }
+
     const normalizedEmail =
       email.trim().toLowerCase();
     const isAdminEmail =
       normalizedEmail === adminEmail;
+
+    if (!normalizedEmail) {
+      setError("Enter your email address.");
+      return;
+    }
+
+    if (!password) {
+      setError("Enter your password.");
+      return;
+    }
 
     if (
       isAdminEmail &&
@@ -43,35 +87,56 @@ export default function DemoAuthCard({
     }
 
     setError("");
+    setIsSubmitting(true);
 
-    const user =
-      isAdminEmail
-        ? demoAdminUser
-        : {
-            ...demoUser,
-            email:
-              normalizedEmail ||
-              demoUser.email,
-            name:
-              normalizedEmail
-                .split("@")[0]
-                ?.replace(/[._-]/g, " ")
-                ?.replace(/\b\w/g, (letter) =>
-                  letter.toUpperCase(),
-                ) || demoUser.name,
-          };
+    const displayName =
+      normalizedEmail
+        .split("@")[0]
+        ?.replace(/[._-]/g, " ")
+        ?.replace(/\b\w/g, (letter) =>
+          letter.toUpperCase(),
+        ) || demoUser.name;
 
-    setStoredDemoUser(user);
+    try {
+      const user =
+        isAdminEmail
+          ? demoAdminUser
+          : isSignUp
+          ? createLocalAccount({
+              email: normalizedEmail,
+              password,
+              name: displayName,
+            })
+          : signInLocalAccount({
+              email: normalizedEmail,
+              password,
+            });
 
-    router.push(
-      user.email === demoAdminUser.email
-        ? "/admin"
-        : "/dashboard",
-    );
+      if (isAdminEmail) {
+        setStoredDemoUser(user);
+      }
+
+      router.replace(
+        getRedirectPath(user.email === demoAdminUser.email),
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not continue. Please try again.",
+      );
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-white/40 bg-white/95 p-8 shadow-2xl backdrop-blur">
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        continueWithEmail();
+      }}
+      className="w-full max-w-md rounded-2xl border border-white/40 bg-white/95 p-8 shadow-2xl backdrop-blur"
+    >
       <div className="mb-8 text-center">
         <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-cyan-500 text-xl font-bold text-white shadow-lg">
           T
@@ -80,7 +145,9 @@ export default function DemoAuthCard({
           {isSignUp ? "Create your account" : "Sign in to your account"}
         </h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Use your email to continue. Admin access requires the admin password.
+          {isSignUp
+            ? "Create an account with your email and password."
+            : "Use the email and password you signed up with."}
         </p>
       </div>
 
@@ -98,11 +165,6 @@ export default function DemoAuthCard({
         onChange={(event) => {
           setEmail(event.target.value);
           setError("");
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            continueWithEmail();
-          }
         }}
         className="mb-4 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
         placeholder="you@example.com"
@@ -123,16 +185,11 @@ export default function DemoAuthCard({
           setPassword(event.target.value);
           setError("");
         }}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            continueWithEmail();
-          }
-        }}
         className="mb-4 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
         placeholder={
           email.trim().toLowerCase() === adminEmail
             ? "Admin password"
-            : "Optional for travelers"
+            : "Your password"
         }
       />
 
@@ -143,8 +200,8 @@ export default function DemoAuthCard({
       ) : null}
 
       <button
-        type="button"
-        onClick={continueWithEmail}
+        type="submit"
+        disabled={isSubmitting}
         className="flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-cyan-600"
       >
         {isSignUp ? (
@@ -152,12 +209,20 @@ export default function DemoAuthCard({
         ) : (
           <LogIn className="h-4 w-4" />
         )}
-        Continue
+        {isSubmitting
+          ? isSignUp
+            ? "Creating..."
+            : "Signing in..."
+          : isSignUp
+          ? "Create Account"
+          : "Sign In"}
       </button>
 
       <p className="mt-5 text-center text-xs leading-5 text-slate-500">
-        Use admin@gmail.com to open the admin section.
+        {isSignUp
+          ? "Already have an account? Use Sign In."
+          : "New here? Use Sign Up first."}
       </p>
-    </div>
+    </form>
   );
 }

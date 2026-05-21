@@ -1,5 +1,6 @@
 export const isDemoMode =
-  process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  process.env.NEXT_PUBLIC_DEMO_MODE === "true" ||
+  !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export const demoUser = {
   id: "demo-user",

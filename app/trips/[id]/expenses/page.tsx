@@ -1,7 +1,5 @@
 "use client";
 
-import { RealtimeChannel } from "@supabase/supabase-js";
-
 import {
   useEffect,
   useMemo,
@@ -108,7 +106,9 @@ export default function TripExpensesPage() {
 
   useEffect(() => {
 
-    let channel: RealtimeChannel;
+    let channel:
+      ReturnType<typeof supabase.channel> | null =
+        null;
 
     if (tripId) {
 

@@ -13,7 +13,6 @@ import {
   useAppUser as useUser,
 } from "@/lib/app-auth";
 
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
 import Navbar from "@/components/Navbar";
@@ -31,6 +30,7 @@ import {
   Users,
   Receipt,
   ArrowRight,
+  CalendarDays,
 } from "lucide-react";
 
 
@@ -52,6 +52,46 @@ type TripWithMembers =
   Trip & {
     membersCount: number;
   };
+
+type TripMembership = {
+  trip_id: string;
+};
+
+function getTripDates(plan: any) {
+  const parsedPlan =
+    typeof plan === "string"
+      ? JSON.parse(plan)
+      : plan;
+
+  return parsedPlan?.trip_dates;
+}
+
+function formatTripDateRange(plan: any) {
+  const dates = getTripDates(plan);
+
+  if (
+    !dates?.start_date ||
+    !dates?.end_date
+  ) {
+    return "";
+  }
+
+  const start = new Date(
+    `${dates.start_date}T00:00:00`,
+  );
+  const end = new Date(
+    `${dates.end_date}T00:00:00`,
+  );
+
+  return `${start.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  })} - ${end.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })}`;
+}
 
 const getImage = (
   destination: string,
@@ -89,7 +129,8 @@ export default function TripsPage() {
   useEffect(() => {
 
     let channel:
-      RealtimeChannel;
+      ReturnType<typeof supabase.channel> | null =
+        null;
 
     if (user?.id) {
 
@@ -206,7 +247,7 @@ export default function TripsPage() {
       }
 
       const tripIds =
-        memberships?.map(
+        (memberships as TripMembership[] | null)?.map(
           (
             m,
           ) => m.trip_id,
@@ -261,7 +302,7 @@ export default function TripsPage() {
       }
 
       const safeTrips =
-        tripsData || [];
+        (tripsData as Trip[] | null) || [];
 
       // ====================================
       // GET ALL MEMBER COUNTS
@@ -290,7 +331,7 @@ export default function TripsPage() {
         > = {};
 
       (
-        allMembers ||
+        (allMembers as TripMembership[] | null) ||
         []
       ).forEach(
         (
@@ -705,8 +746,22 @@ export default function TripsPage() {
                         </span>
                       </div>
 
+                      {formatTripDateRange(
+                        trip.plan,
+                      ) && (
+
+                        <p className="mt-4 flex items-center gap-2 text-sm font-medium text-slate-700">
+
+                          <CalendarDays className="h-4 w-4 text-cyan-500" />
+
+                          {formatTripDateRange(
+                            trip.plan,
+                          )}
+                        </p>
+                      )}
+
                       {/* DATE */}
-                      <p className="mt-4 text-xs text-slate-400">
+                      <p className="mt-3 text-xs text-slate-400">
 
                         Created{" "}
 

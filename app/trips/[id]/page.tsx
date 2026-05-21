@@ -29,10 +29,10 @@ import {
 
 import { Footer } from "@/components/Footer";
 
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
 import { useAppUser as useUser } from "@/lib/app-auth";
+import { cn } from "@/lib/utils";
 
 import { toast } from "sonner";
 
@@ -64,6 +64,10 @@ type TripPlan = {
   budget: Record<string, string>;
   tips?: string[];
   places?: string[];
+  trip_dates?: {
+    start_date: string;
+    end_date: string;
+  };
 };
 
 type Trip = {
@@ -103,6 +107,33 @@ const getImage = (
     /\s/g,
     "",
   )}/1400/800`;
+
+function formatTripDateRange(
+  dates?: TripPlan["trip_dates"],
+) {
+  if (
+    !dates?.start_date ||
+    !dates?.end_date
+  ) {
+    return "";
+  }
+
+  const start = new Date(
+    `${dates.start_date}T00:00:00`,
+  );
+  const end = new Date(
+    `${dates.end_date}T00:00:00`,
+  );
+
+  return `${start.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  })} - ${end.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })}`;
+}
 
 export default function TripDetailPage() {
 
@@ -162,7 +193,8 @@ export default function TripDetailPage() {
   useEffect(() => {
 
     let channel:
-      RealtimeChannel;
+      ReturnType<typeof supabase.channel> | null =
+        null;
 
     if (id) {
 
@@ -605,6 +637,11 @@ export default function TripDetailPage() {
         )
       : trip.plan;
 
+  const tripDateRange =
+    formatTripDateRange(
+      plan?.trip_dates,
+    );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-cyan-50">
 
@@ -713,18 +750,19 @@ export default function TripDetailPage() {
 
                   <Calendar className="h-4 w-4" />
 
-                  {new Date(
-                    trip.created_at,
-                  ).toLocaleDateString(
-                    "en-IN",
-                    {
-                      day: "numeric",
-                      month:
-                        "short",
-                      year:
-                        "numeric",
-                    },
-                  )}
+                  {tripDateRange ||
+                    new Date(
+                      trip.created_at,
+                    ).toLocaleDateString(
+                      "en-IN",
+                      {
+                        day: "numeric",
+                        month:
+                          "short",
+                        year:
+                          "numeric",
+                      },
+                    )}
                 </span>
               </div>
             </div>
@@ -894,7 +932,7 @@ export default function TripDetailPage() {
       <div className="container space-y-8 py-10">
 
         {/* STATS */}
-        <div className="grid gap-6 md:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-5">
 
           {[
             {
@@ -919,6 +957,15 @@ export default function TripDetailPage() {
 
               value:
                 members.length,
+            },
+
+            {
+              label:
+                "Dates",
+
+              value:
+                tripDateRange ||
+                "Not set",
             },
 
             {
@@ -950,7 +997,14 @@ export default function TripDetailPage() {
                 {s.label}
               </p>
 
-              <h2 className="mt-2 text-3xl font-bold text-slate-900">
+              <h2
+                className={cn(
+                  "mt-2 font-bold text-slate-900",
+                  s.label === "Dates"
+                    ? "text-base leading-snug"
+                    : "text-3xl",
+                )}
+              >
 
                 {s.value}
               </h2>
