@@ -103,7 +103,6 @@ export default function Navbar() {
     isSignedIn;
 
   const authLoaded =
-    isDemoMode ||
     isLoaded;
 
   const navLinks = [

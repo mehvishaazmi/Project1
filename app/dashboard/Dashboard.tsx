@@ -70,7 +70,7 @@ const statusColor = (i: number) =>
   i === 0 ? "bg-primary/90 text-primary-foreground" : "bg-background/80 text-foreground";
 
 export default function Dashboard() {
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
   const userId = user?.id ?? "";
   const userName = user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] ?? "Traveller";
@@ -81,9 +81,28 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.replace("/sign-in");
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  useEffect(() => {
     if (!userId) return;
     fetchAll();
   }, [userId]);
+
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container pt-32">
+          <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">
+            Checking sign-in status...
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   async function fetchAll() {
     setLoading(true);

@@ -75,13 +75,16 @@ export function getStoredDemoUser() {
   );
 
   if (!stored) {
-    return demoUser;
+    window.localStorage.removeItem(demoSessionKey);
+    return null;
   }
 
   try {
     return JSON.parse(stored) as DemoLocalUser;
   } catch {
-    return demoUser;
+    window.localStorage.removeItem(demoSessionKey);
+    window.localStorage.removeItem(demoUserKey);
+    return null;
   }
 }
 
@@ -245,11 +248,14 @@ const fallbackAdminUser = toAppUser(demoAdminUser);
 export function useAppAuth() {
   if (isDemoMode) {
     const [currentUser, setCurrentUser] =
-      useState<DemoLocalUser | null>(() => getStoredDemoUser());
+      useState<DemoLocalUser | null>(null);
+    const [isLoaded, setIsLoaded] =
+      useState(false);
 
     useEffect(() => {
       const refreshUser = () => {
         setCurrentUser(getStoredDemoUser());
+        setIsLoaded(true);
       };
 
       refreshUser();
@@ -264,7 +270,7 @@ export function useAppAuth() {
     }, []);
 
     return {
-      isLoaded: true,
+      isLoaded,
       isSignedIn: Boolean(currentUser),
       userId: currentUser?.id || null,
     };
@@ -289,7 +295,9 @@ export function useAppSignOut() {
 export function useAppUser() {
   if (isDemoMode) {
     const [currentUser, setCurrentUser] =
-      useState<DemoLocalUser | null>(() => getStoredDemoUser());
+      useState<DemoLocalUser | null>(null);
+    const [isLoaded, setIsLoaded] =
+      useState(false);
 
     useEffect(() => {
       const refreshUser = () => {
@@ -301,6 +309,7 @@ export function useAppUser() {
             ? previousUser
             : storedUser,
         );
+        setIsLoaded(true);
       };
 
       refreshUser();
@@ -325,7 +334,7 @@ export function useAppUser() {
     );
 
     return {
-      isLoaded: true,
+      isLoaded,
       isSignedIn: Boolean(user),
       user,
     };
